@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Requester\ParameterBinding\**" />
+    <EmbeddedResource Remove="Requester\ParameterBinding\**" />
+    <None Remove="Requester\ParameterBinding\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Orleans.Core" Version="2.0.3" />
+    <PackageReference Include="Microsoft.Orleans.OrleansConsulUtils" Version="2.0.0" />
+  </ItemGroup>
+
+</Project>

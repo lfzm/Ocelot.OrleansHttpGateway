@@ -1,0 +1,37 @@
+﻿{
+  "ReRoutes": [
+    {
+      "UpstreamPathTemplate": "/uc/user/{url}",
+      "UpstreamHttpMethod": [ "Post", "Get" ],
+      "DownstreamPathTemplate": "/user/{url}",
+      "DownstreamScheme": "orleans",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "127.0.0.1",
+          "Port": 30000
+        }
+      ],
+      "ServiceName": "uc",
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "oidc",
+        "AllowedScopes": [ "COTC_API" ]
+      },
+      "AddClaimsToRequest": {
+        "GrainKey": "Claims[http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier] > value"
+      }
+    }
+  ],
+  "GlobalConfiguration": {
+    "RequestIdKey": "OcRequestId"
+  },
+  "Orleans": {
+    "Clients": {
+      "uc": {
+        "ServiceId": "dev",
+        "ClusterId": "dev",
+        "InterfaceDllPathName": "E:\\工作项目\\project_Zop\\Components\\Orleans.HttpGateway\\example\\OrleansHost\\bin\\Debug\\netcoreapp2.1\\OrleansInterface.dll",
+        "InterfaceNameTemplate": "I{GrainName}Service"
+      }
+    }
+  }
+}

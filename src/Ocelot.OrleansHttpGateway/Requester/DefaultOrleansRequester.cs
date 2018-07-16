@@ -10,11 +10,13 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Authentication;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
 using Ocelot.DownstreamRouteFinder.Finder;
 using Ocelot.Logging;
 using Ocelot.Middleware;
+using Ocelot.OrleansHttpGateway.Configuration;
 using Ocelot.OrleansHttpGateway.Model;
 using Ocelot.Requester;
 using Ocelot.Responses;
@@ -23,6 +25,7 @@ namespace Ocelot.OrleansHttpGateway.Requester
 {
     public class DefaultOrleansRequester : IOrleansRequester
     {
+        private readonly OrleansRequesterConfiguration _config;
         private readonly IClusterClientBuilder _clusterClientBuilder;
         private readonly IGrainReference _grainReference;
         private readonly IGrainMethodInvoker _grainInvoker;
@@ -35,7 +38,8 @@ namespace Ocelot.OrleansHttpGateway.Requester
             , IGrainMethodInvoker grainInvoker
             , IRouteValuesBuilder routeValuesBuilder
             , IOcelotLoggerFactory factory
-            , JsonSerializer jsonSerializer)
+            , JsonSerializer jsonSerializer
+            , IOptions<OrleansRequesterConfiguration> config)
         {
             this._clusterClientBuilder = clusterClientBuilder;
             this._grainReference = grainReference;
@@ -43,6 +47,7 @@ namespace Ocelot.OrleansHttpGateway.Requester
             this._routeValuesBuilder = routeValuesBuilder;
             this._logger = factory.CreateLogger<DefaultOrleansRequester>();
             this._serializer = jsonSerializer;
+            this._config = config?.Value;
         }
         public async Task<Response<OrleansResponseMessage>> GetResponse(DownstreamContext context)
         {
@@ -51,7 +56,9 @@ namespace Ocelot.OrleansHttpGateway.Requester
                 var route = this._routeValuesBuilder.Build(context);
                 _clusterClientBuilder.Build(route, context);
                 GrainReference grain = this._grainReference.GetGrainReference(route);
-                this.SetAuthorization(context.HttpContext);
+
+                //Orleans injects the DownstreamContext into the RequestContext when requested
+                this._config?.RequestContextInjection?.Invoke(context);
                 var result = await _grainInvoker.Invoke(grain, route);
 
                 var content = new OrleansContent(result, this._serializer);
@@ -94,16 +101,5 @@ namespace Ocelot.OrleansHttpGateway.Requester
                 return new ErrorResponse<OrleansResponseMessage>(new UnknownError("UnknownError"));
             }
         }
-
-        /// <summary>
-        /// Set Authorization Bearer
-        /// </summary>
-        /// <param name="accessType"></param>
-        private void SetAuthorization(HttpContext context)
-        {
-            if (context.Request.Headers.TryGetValue("Authorization", out StringValues value))
-                Orleans.Runtime.RequestContext.Set("Authorization", string.Format("Bearer {0}", value));
-        }
-
     }
 }

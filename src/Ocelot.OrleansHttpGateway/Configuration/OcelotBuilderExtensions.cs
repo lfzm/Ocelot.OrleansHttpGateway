@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Newtonsoft.Json;
 using Ocelot.DependencyInjection;
+using Ocelot.Middleware;
 using Ocelot.OrleansHttpGateway.Configuration;
 using Ocelot.OrleansHttpGateway.Infrastructure;
 using Ocelot.OrleansHttpGateway.Requester;
@@ -15,24 +16,24 @@ namespace Ocelot.DependencyInjection
 {
     public static class OcelotBuilderExtensions
     {
-        public static IOcelotBuilder AddOrleansHttpGateway(this IOcelotBuilder builder, Action<OrleansHttpGatewayOptions> configure)
+        public static IOcelotBuilder AddOrleansHttpGateway(this IOcelotBuilder builder, Action<OrleansHttpGatewayOptions> configure, Action<OrleansRequesterConfiguration> OrleansRequesterConfiguration = null)
         {
-            builder.Services.AddOrleansHttpGateway();
-            builder.Services.Configure<OrleansHttpGatewayOptions>(options =>
-            {
-                configure?.Invoke(options);
-            });
+            builder.Services.AddOrleansHttpGateway(OrleansRequesterConfiguration);
+            builder.Services.Configure<OrleansHttpGatewayOptions>(configure);
             return builder;
         }
-        public static IOcelotBuilder AddOrleansHttpGateway(this IOcelotBuilder builder)
+        public static IOcelotBuilder AddOrleansHttpGateway(this IOcelotBuilder builder, Action<OrleansRequesterConfiguration> OrleansRequesterConfiguration = null)
         {
-            builder.Services.AddOrleansHttpGateway();
+            builder.Services.AddOrleansHttpGateway(OrleansRequesterConfiguration);
+        
             builder.Services.Configure<OrleansHttpGatewayOptions>(builder.Configuration.GetSection("Orleans"));
             return builder;
         }
 
-        private static IServiceCollection AddOrleansHttpGateway(this IServiceCollection services)
+        private static IServiceCollection AddOrleansHttpGateway(this IServiceCollection services, Action<OrleansRequesterConfiguration> OrleansRequesterConfiguration = null)
         {
+            if (OrleansRequesterConfiguration != null)
+                services.Configure<OrleansRequesterConfiguration>(OrleansRequesterConfiguration);
             //JsonSerializer 
             services.AddSingleton<JsonSerializer>((IServiceProvider serviceProvider) =>
             {

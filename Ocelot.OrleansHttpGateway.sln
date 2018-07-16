@@ -17,6 +17,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OrleansInterface", "example
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ocelot.OrleansHttpGateway", "src\Ocelot.OrleansHttpGateway\Ocelot.OrleansHttpGateway.csproj", "{B1FA01B9-A83C-46E6-AB6C-DC41AF092D3C}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Ocelot", "..\..\..\..\Source\Ocelot\src\Ocelot\Ocelot.csproj", "{602E6225-B17A-4613-952F-DF05FCA15273}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +41,10 @@ Global
 		{B1FA01B9-A83C-46E6-AB6C-DC41AF092D3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1FA01B9-A83C-46E6-AB6C-DC41AF092D3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1FA01B9-A83C-46E6-AB6C-DC41AF092D3C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{602E6225-B17A-4613-952F-DF05FCA15273}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{602E6225-B17A-4613-952F-DF05FCA15273}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{602E6225-B17A-4613-952F-DF05FCA15273}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{602E6225-B17A-4613-952F-DF05FCA15273}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -48,6 +54,7 @@ Global
 		{43475CB9-598E-4008-91EF-C638D8E3B41B} = {308A4A1C-C300-4B59-806F-B31FCA9F8794}
 		{015DDD6B-D152-4AEF-9E30-CCB6403ED3C0} = {308A4A1C-C300-4B59-806F-B31FCA9F8794}
 		{B1FA01B9-A83C-46E6-AB6C-DC41AF092D3C} = {1D6C746E-D7B0-4D13-8E30-1AFA8EC0B0BC}
+		{602E6225-B17A-4613-952F-DF05FCA15273} = {1D6C746E-D7B0-4D13-8E30-1AFA8EC0B0BC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {D5750446-77CC-4EEE-A65C-AD7E46BC84FB}

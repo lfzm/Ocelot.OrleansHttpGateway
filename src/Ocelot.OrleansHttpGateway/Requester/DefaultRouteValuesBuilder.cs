@@ -105,7 +105,8 @@ namespace Ocelot.OrleansHttpGateway.Requester
 
         private IQueryCollection ResolveQuery(string queryString)
         {
-            var querys = Microsoft.AspNetCore.WebUtilities.QueryHelpers                .ParseQuery(queryString);
+            var querys = Microsoft.AspNetCore.WebUtilities.QueryHelpers
+                .ParseQuery(queryString);
             return new QueryCollection(querys);
         }
 

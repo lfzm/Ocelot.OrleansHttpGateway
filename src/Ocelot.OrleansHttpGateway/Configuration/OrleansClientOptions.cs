@@ -13,7 +13,7 @@ namespace Ocelot.OrleansHttpGateway.Configuration
         /// Orleans Grain Interface path name
         /// </summary>
         public string InterfaceDllPathName { get; set; }
-        public string InterfaceNameTemplate { get; set; }
+        public string ServiceName { get; set; }
 
         private Assembly assembly;
         internal Assembly Assembly

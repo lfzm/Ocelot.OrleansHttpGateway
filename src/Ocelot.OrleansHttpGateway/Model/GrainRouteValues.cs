@@ -17,19 +17,17 @@ namespace Ocelot.OrleansHttpGateway.Model
 {
     public class GrainRouteValues
     {
-        public GrainRouteValues()
-        {
-          
-        }
         public OrleansClientOptions ClientOptions { get; set; }
-        public Type GrainType { get; set; }
         public string SiloName { get; set; }
         public string GrainName { get; set; }
-        public string GrainMethod { get; set; }
+        public string GrainMethodName { get; set; }
         public string GrainId { get; set; }
         public IQueryCollection Querys { get; set; }
         public JObject Body { get; set; }
+        public string RequestUri { get; set; }
 
-      
+        public Type GrainType { get; set; }
+        public MethodInfo GrainMethod { get; set; }
+
     }
 }

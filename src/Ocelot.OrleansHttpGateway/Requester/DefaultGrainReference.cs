@@ -1,17 +1,12 @@
 ﻿using Ocelot.Logging;
-using Ocelot.Middleware;
-using Ocelot.OrleansHttpGateway.Configuration;
 using Ocelot.OrleansHttpGateway.Infrastructure;
 using Ocelot.OrleansHttpGateway.Model;
-using Ocelot.OrleansHttpGateway.Requester;
 using Orleans;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace Ocelot.OrleansHttpGateway.Requester
 {

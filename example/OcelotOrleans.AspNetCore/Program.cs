@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
+using Ocelot.OrleansHttpGateway.Configuration;
 
 namespace OcelotOrleans.AspNetCore
 {
@@ -39,7 +40,14 @@ namespace OcelotOrleans.AspNetCore
                        x.Audience = "COTC_API";
                    });
                s.AddOcelot()
-                    .AddOrleansHttpGateway();
+                    .AddOrleansHttpGateway((OrleansRequesterConfiguration config) =>
+                    {
+                        config.MapRouteToGraininterface = (route) =>
+                        {
+                            return "I{GrainName}Service".Replace("{GrainName}", route.GrainName);
+                        };
+
+                    });
            })
            .ConfigureLogging((hostingContext, logging) =>
            {

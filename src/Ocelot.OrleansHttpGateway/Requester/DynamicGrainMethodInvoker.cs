@@ -1,10 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
-using Ocelot.OrleansHttpGateway.Infrastructure;
+﻿using Ocelot.OrleansHttpGateway.Infrastructure;
 using Ocelot.OrleansHttpGateway.Model;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
@@ -14,7 +11,7 @@ namespace Ocelot.OrleansHttpGateway.Requester
     internal class DynamicGrainMethodInvoker : IGrainMethodInvoker
     {
         private readonly IParameterBinder _parameterBinder;
-        private readonly ConcurrentDictionary<string, List<ObjectMethodExecutor>> _cachedExecutors = new ConcurrentDictionary<string, List<ObjectMethodExecutor>>();
+        private readonly ConcurrentDictionary<string, ObjectMethodExecutor> _cachedExecutors = new ConcurrentDictionary<string, ObjectMethodExecutor>();
 
         public DynamicGrainMethodInvoker(IParameterBinder parameterBinder)
         {
@@ -24,40 +21,19 @@ namespace Ocelot.OrleansHttpGateway.Requester
 
         public async Task<object> Invoke(GrainReference grain, GrainRouteValues route)
         {
-            var executors = _cachedExecutors.GetOrAdd($"{grain.GrainType.FullName}.{route.GrainMethod}",
-                (key) =>
-                {
-                    //Get grainType IEnumerable<MethodInfo> 
-                    var mis = ReflectionUtil.GetMethodsIncludingBaseInterfaces(grain.GrainType)
-                        .Where(x => string.Equals(x.Name, route.GrainMethod, StringComparison.OrdinalIgnoreCase)).ToList();
-                    if (mis.Count <= 0)
-                        throw new OrleansGrainReferenceException($"Did not find the {route.SiloName }.{route.GrainMethod} get method");
+            string key = $"{route.SiloName}.{route.GrainName}.{route.GrainMethodName}";
+            var executor = _cachedExecutors.GetOrAdd(key, (_key) =>
+             {
+                 ObjectMethodExecutor _executor = ObjectMethodExecutor.Create(route.GrainMethod, grain.GrainType.GetTypeInfo());
+                 return _executor;
+             });
 
-                    List<ObjectMethodExecutor> _executors = new List<ObjectMethodExecutor>();
-                    foreach (var mi in mis)
-                    {
-                        var exe = ObjectMethodExecutor.Create(mi, grain.GrainType.GetTypeInfo());
-                        _executors.Add(exe);
-                    }
-                    _executors.Sort((x, y) =>
-                        -x.MethodParameters.Count().CompareTo(y.MethodParameters.Count())
-                    );
-                    return _executors;
-                });
-
-            foreach (var executor in executors)
-            {
-                var parameters = GetParameters(executor, route);
-                if (executor.MethodParameters.Count() == parameters.Length)
-                    return await this.ExecuteAsync(executor, grain, parameters);
-            }
-            throw new OrleansGrainReferenceException($"{route.SiloName }.{route.GrainMethod} -- No suitable parameter binder found for request");
-
+            var parameters = GetParameters(executor, route);
+            return await this.ExecuteAsync(executor, grain, parameters);
         }
 
         private object[] GetParameters(ObjectMethodExecutor executor, GrainRouteValues route)
         {
-
             //short circuit if no parameters
             if (executor.MethodParameters == null || executor.MethodParameters.Length == 0)
             {

@@ -1,17 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Net;
-using System.Net.Http;
-using System.Security.Claims;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.Authentication;
-using Microsoft.AspNetCore.Http.Features;
-using Microsoft.Extensions.Options;
-using Microsoft.Extensions.Primitives;
+﻿using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Ocelot.DownstreamRouteFinder.Finder;
 using Ocelot.Logging;
@@ -20,6 +7,9 @@ using Ocelot.OrleansHttpGateway.Configuration;
 using Ocelot.OrleansHttpGateway.Model;
 using Ocelot.Requester;
 using Ocelot.Responses;
+using System;
+using System.Net;
+using System.Threading.Tasks;
 
 namespace Ocelot.OrleansHttpGateway.Requester
 {

@@ -27,6 +27,7 @@
   "Orleans": {
     "Clients": {
       "uc": {
+        "ServiceName": "uc",
         "ServiceId": "dev",
         "ClusterId": "dev",
         "InterfaceDllPathName": "E:\\工作项目\\project_Zop\\Components\\Orleans.HttpGateway\\example\\OrleansHost\\bin\\Debug\\netcoreapp2.1\\OrleansInterface.dll",

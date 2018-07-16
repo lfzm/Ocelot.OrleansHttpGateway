@@ -1,12 +1,5 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Internal;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -14,27 +7,40 @@ using Ocelot.Infrastructure.Claims.Parser;
 using Ocelot.Logging;
 using Ocelot.Middleware;
 using Ocelot.OrleansHttpGateway.Configuration;
+using Ocelot.OrleansHttpGateway.Infrastructure;
 using Ocelot.OrleansHttpGateway.Model;
 using Orleans;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text;
 
 namespace Ocelot.OrleansHttpGateway.Requester
 {
     internal class DefaultRouteValuesBuilder : IRouteValuesBuilder
     {
         private readonly ConcurrentDictionary<string, Type> _GrainTypeCache = new ConcurrentDictionary<string, Type>(StringComparer.OrdinalIgnoreCase);
+        private readonly ConcurrentDictionary<string, List<MethodInfo>> _MethodInfoCache = new ConcurrentDictionary<string, List<MethodInfo>>(StringComparer.OrdinalIgnoreCase);
         private readonly OrleansHttpGatewayOptions _options;
+        private readonly OrleansRequesterConfiguration _config;
         private readonly IClaimsParser _claimsParser;
         private readonly IOcelotLogger _logger;
 
-        public DefaultRouteValuesBuilder(IOptions<OrleansHttpGatewayOptions> config, IOcelotLoggerFactory factory, IClaimsParser claimsParser)
+        public DefaultRouteValuesBuilder(IOptions<OrleansHttpGatewayOptions> options
+            , IOptions<OrleansRequesterConfiguration> config
+           , IOcelotLoggerFactory factory, IClaimsParser claimsParser)
         {
-            this._options = config.Value;
+            this._config = config?.Value;
+            this._options = options.Value;
             this._logger = factory.CreateLogger<DefaultRouteValuesBuilder>();
             this._claimsParser = claimsParser;
         }
         public GrainRouteValues Build(DownstreamContext context)
         {
-            GrainRouteValues route = this.ResolveRequestContext(context);
+            GrainRouteValues route = this.GetRequestRoute(context);
             this._logger.LogDebug($"Http address translation Orleans request address {context.DownstreamRequest.ToUri()}");
 
             //Get client option based on serviceName
@@ -42,35 +48,55 @@ namespace Ocelot.OrleansHttpGateway.Requester
                 throw new OrleansConfigurationException($"{nameof(OrleansClientOptions)} without {route.SiloName} configured ");
             route.ClientOptions = _options.Clients[route.SiloName];
 
-            route.GrainType = _GrainTypeCache.GetOrAdd($"{route.SiloName}_#_{route.GrainName}", (key) => this.GetGrainInterface(route.ClientOptions, route.SiloName, route.GrainName));
-            if (route.GrainType == null)
-                throw new UnableToFindDownstreamRouteException($"The request address is invalid,No corresponding Orleans interface found. URL:{context.DownstreamRequest.ToUri()}");
-
+            //Find the request corresponding to the Orleans interface
+            route.GrainType = this.GetGrainType(route);
+            //Find the request corresponding to the method in the Orleans interface
+            route.GrainMethod = this.GetGtainMethods(route);
             return route;
         }
 
-        private Type GetGrainInterface(OrleansClientOptions clientOption, string siloName, string grainName)
+        private Type GetGrainType(GrainRouteValues route)
         {
-            this._logger.LogDebug($"Looking for the {siloName} Grain interface");
-            if (string.IsNullOrEmpty(clientOption.InterfaceNameTemplate))
+          return _GrainTypeCache.GetOrAdd($"{route.SiloName}_#_{route.GrainName}", (key) =>
             {
-                throw new OrleansConnectionFailedException($"{siloName} Interface Name Template not set");
-            }
-            try
-            {
-                string grainInterface = clientOption.InterfaceNameTemplate.Replace("{GrainName}", grainName);
-                Type _type = clientOption.Assembly.ExportedTypes
-                   .Where(f => typeof(IGrain).IsAssignableFrom(f) && f.Name.Equals(grainInterface, StringComparison.OrdinalIgnoreCase))
-                   .FirstOrDefault();
-                return _type;
-            }
-            catch (Exception ex)
-            {
-                throw new OrleansConfigurationException($"{siloName} Orleans Client Options configuration error, unable to find Grain interface", ex);
-            }
+                this._logger.LogDebug($"Looking for the {route.ClientOptions.ServiceName} Grain interface");
+                if (this._config == null || this._config.MapRouteToGraininterface == null)
+                    throw new OrleansConnectionFailedException($"{route.ClientOptions.ServiceName}Route map Grain interface configured to set");
+
+                try
+                {
+                    string grainInterface = this._config.MapRouteToGraininterface.Invoke(route);
+                    Type _type = route.ClientOptions.Assembly.ExportedTypes
+                       .Where(f => typeof(IGrain).IsAssignableFrom(f) && f.Name.Equals(grainInterface, StringComparison.OrdinalIgnoreCase))
+                       .FirstOrDefault();
+
+                    if(_type==null)
+                        throw new UnableToFindDownstreamRouteException($"The request address is invalid,No corresponding Orleans interface “{grainInterface}” found. URL:{route.RequestUri}");
+                    return _type;
+                }
+                catch (Exception ex)
+                {
+                    throw new OrleansConfigurationException($"{route.ClientOptions.ServiceName} Orleans Client Options configuration error, unable to find Grain interface", ex);
+                }
+            });
         }
 
-        private GrainRouteValues ResolveRequestContext(DownstreamContext context)
+        private MethodInfo GetGtainMethods(GrainRouteValues route)
+        {
+            var methods = _MethodInfoCache.GetOrAdd($"{route.SiloName}_#_{route.GrainName}_#_{route.GrainMethodName}", (key) =>
+            {
+                //Get grainType IEnumerable<MethodInfo> 
+                return ReflectionUtil.GetMethodsIncludingBaseInterfaces(route.GrainType)
+                        .Where(x => string.Equals(x.Name, route.GrainMethodName, StringComparison.OrdinalIgnoreCase)).ToList();
+            });
+            if (methods.Count == 0)
+                throw new UnableToFindDownstreamRouteException($"The request address is invalid and the corresponding method in the Orleans interface {route.SiloName}_#_{route.GrainName} was not found. {route.GrainMethodName}. URL:{route.RequestUri}");
+
+            //Get the first method, temporarily only support one method with the same name
+            return methods.FirstOrDefault();
+        }
+
+        private GrainRouteValues GetRequestRoute(DownstreamContext context)
         {
             GrainRouteValues routeValues = new GrainRouteValues();
             string[] route = context.DownstreamRequest.AbsolutePath.Split('/')
@@ -82,7 +108,8 @@ namespace Ocelot.OrleansHttpGateway.Requester
             }
             routeValues.SiloName = context.DownstreamReRoute.ServiceName;
             routeValues.GrainName = route[0];
-            routeValues.GrainMethod = route[1];
+            routeValues.GrainMethodName = route[1];
+            routeValues.RequestUri = context.DownstreamRequest.ToUri();
 
             //Claims to Claims Tranformation Whether to inject GrainKay
             var response = this._claimsParser.GetValue(context.HttpContext.User.Claims, "GrainKay", "", 0);
@@ -93,8 +120,8 @@ namespace Ocelot.OrleansHttpGateway.Requester
 
             try
             {
-                routeValues.Querys = this.ResolveQuery(context.DownstreamRequest.Query);
-                routeValues.Body = this.ResolveBody(context.HttpContext.Request);
+                routeValues.Querys = this.GetQueryParameter(context.DownstreamRequest.Query);
+                routeValues.Body = this.GetBodyParameter(context.HttpContext.Request);
             }
             catch (Exception ex)
             {
@@ -103,14 +130,14 @@ namespace Ocelot.OrleansHttpGateway.Requester
             return routeValues;
         }
 
-        private IQueryCollection ResolveQuery(string queryString)
+        private IQueryCollection GetQueryParameter(string queryString)
         {
             var querys = Microsoft.AspNetCore.WebUtilities.QueryHelpers
                 .ParseQuery(queryString);
             return new QueryCollection(querys);
         }
 
-        private JObject ResolveBody(HttpRequest request)
+        private JObject GetBodyParameter(HttpRequest request)
         {
             var requestContentType = request.GetTypedHeaders().ContentType;
             if (requestContentType?.MediaType != "application/json")

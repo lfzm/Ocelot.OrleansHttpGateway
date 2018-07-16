@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Ocelot.OrleansHttpGateway.Configuration;
-using Orleans;
+﻿using Orleans;
 using Orleans.Runtime;
+using System;
+using System.Threading.Tasks;
 
 namespace Ocelot.OrleansHttpGateway.Requester
 {

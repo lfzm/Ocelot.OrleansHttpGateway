@@ -46,13 +46,12 @@ namespace Ocelot.OrleansHttpGateway.Requester
                 var route = this._routeValuesBuilder.Build(context);
                 _clusterClientBuilder.Build(route, context);
                 GrainReference grain = this._grainReference.GetGrainReference(route);
-
                 //Orleans injects the DownstreamContext into the RequestContext when requested
                 this._config?.RequestContextInjection?.Invoke(context);
+                //Grain Dynamic request
                 var result = await _grainInvoker.Invoke(grain, route);
 
-                var content = new OrleansContent(result, this._serializer);
-                var message = new OrleansResponseMessage(content, HttpStatusCode.OK);
+                var message = new OrleansResponseMessage(new OrleansContent(result, this._serializer), HttpStatusCode.OK);
                 return new OkResponse<OrleansResponseMessage>(message);
             }
             catch (OrleansConfigurationException ex)

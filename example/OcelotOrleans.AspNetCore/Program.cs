@@ -34,12 +34,19 @@ namespace OcelotOrleans.AspNetCore
            .ConfigureServices(s =>
            {
                s.AddAuthentication()
-                    .AddJwtBearer("oidc", x =>
+                    .AddJwtBearer("uc", x =>
+                   {
+                       x.RequireHttpsMetadata = false;
+                       x.Authority = "http://auth.zop.alingfly.com/";
+                       x.Audience = "COTC_API";
+                   })
+                   .AddJwtBearer("cotc", x =>
                    {
                        x.RequireHttpsMetadata = false;
                        x.Authority = "http://auth.zop.alingfly.com/";
                        x.Audience = "COTC_API";
                    });
+
                s.AddOcelot()
                     .AddOrleansHttpGateway((OrleansRequesterConfiguration config) =>
                     {

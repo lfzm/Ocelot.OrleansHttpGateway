@@ -13,7 +13,7 @@
       ],
       "ServiceName": "uc",
       "AuthenticationOptions": {
-        "AuthenticationProviderKey": "oidc",
+        "AuthenticationProviderKey": "uc",
         "AllowedScopes": [ "COTC_API" ]
       },
       "AddClaimsToRequest": {

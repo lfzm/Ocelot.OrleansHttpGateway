@@ -3,12 +3,14 @@ using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Ocelot.DownstreamRouteFinder.Finder;
 using Ocelot.Infrastructure.Claims.Parser;
 using Ocelot.Logging;
 using Ocelot.Middleware;
 using Ocelot.OrleansHttpGateway.Configuration;
 using Ocelot.OrleansHttpGateway.Infrastructure;
 using Ocelot.OrleansHttpGateway.Model;
+using Ocelot.Responses;
 using Orleans;
 using System;
 using System.Collections.Concurrent;
@@ -38,47 +40,69 @@ namespace Ocelot.OrleansHttpGateway.Requester
             this._logger = factory.CreateLogger<DefaultRouteValuesBuilder>();
             this._claimsParser = claimsParser;
         }
-        public GrainRouteValues Build(DownstreamContext context)
+        public Response<GrainRouteValues> Build(DownstreamContext context)
         {
-            GrainRouteValues route = this.GetRequestRoute(context);
-            this._logger.LogDebug($"Http address translation Orleans request address {context.DownstreamRequest.ToUri()}");
+            try
+            {
+                GrainRouteValues route = this.GetRequestRoute(context);
+                if (route == null)
+                    return this.SetUnableToFindDownstreamRouteError(context,$"The request address is invalid URL:{context.DownstreamRequest.ToUri()}");
 
-            //Get client option based on serviceName
-            if (!_options.Clients.ContainsKey(route.SiloName))
-                throw new OrleansConfigurationException($"{nameof(OrleansClientOptions)} without {route.SiloName} configured ");
-            route.ClientOptions = _options.Clients[route.SiloName];
+                this._logger.LogDebug($"Http address translation Orleans request address {context.DownstreamRequest.ToUri()}");
 
-            //Find the request corresponding to the Orleans interface
-            route.GrainType = this.GetGrainType(route);
-            //Find the request corresponding to the method in the Orleans interface
-            route.GrainMethod = this.GetGtainMethods(route);
-            return route;
+                //Get client option based on serviceName
+                if (!_options.Clients.ContainsKey(route.SiloName))
+                    return this.SetUnableToFindDownstreamRouteError(context,$"{nameof(OrleansClientOptions)} without {route.SiloName} configured ");
+                route.ClientOptions = _options.Clients[route.SiloName];
+
+                //Find the request corresponding to the Orleans interface
+                route.GrainType = this.GetGrainType(route);
+                if (route.GrainType == null)
+                    return this.SetUnableToFindDownstreamRouteError(context,$"The request address is invalid,No corresponding Orleans interface  found. URL:{route.RequestUri}");
+                //Find the request corresponding to the method in the Orleans interface
+                route.GrainMethod = this.GetGtainMethods(route);
+                if (route.GrainMethod == null)
+                    return this.SetUnableToFindDownstreamRouteError(context,$"The request address is invalid and the corresponding method in the Orleans interface {route.SiloName}_#_{route.GrainName} was not found. {route.GrainMethodName}. URL:{route.RequestUri}");
+
+                return new OkResponse<GrainRouteValues>(route);
+            }
+            catch (OrleansConfigurationException ex)
+            {
+                this._logger.LogError($"{nameof(OrleansConfigurationException)}   {ex.Message}", ex);
+                return this.SetUnknownError(ex.Message);
+            }
+            catch (OrleansGrainReferenceException ex)
+            {
+                this._logger.LogError($"{nameof(OrleansGrainReferenceException)}   {ex.Message}", ex);
+                return this.SetUnknownError(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogError(ex.Message, ex);
+                return this.SetUnknownError(ex.Message);
+            }
         }
 
         private Type GetGrainType(GrainRouteValues route)
         {
-          return _GrainTypeCache.GetOrAdd($"{route.SiloName}_#_{route.GrainName}", (key) =>
-            {
-                this._logger.LogDebug($"Looking for the {route.ClientOptions.ServiceName} Grain interface");
-                if (this._config == null || this._config.MapRouteToGraininterface == null)
-                    throw new OrleansConnectionFailedException($"{route.ClientOptions.ServiceName}Route map Grain interface configured to set");
+            return _GrainTypeCache.GetOrAdd($"{route.SiloName}_#_{route.GrainName}", (key) =>
+              {
+                  this._logger.LogDebug($"Looking for the {route.ClientOptions.ServiceName} Grain interface");
+                  if (this._config == null || this._config.MapRouteToGraininterface == null)
+                      throw new OrleansConfigurationException($"{route.ClientOptions.ServiceName}Route map Grain interface configured to set");
 
-                try
-                {
-                    string grainInterface = this._config.MapRouteToGraininterface.Invoke(route);
-                    Type _type = route.ClientOptions.Assembly.ExportedTypes
-                       .Where(f => typeof(IGrain).IsAssignableFrom(f) && f.Name.Equals(grainInterface, StringComparison.OrdinalIgnoreCase))
-                       .FirstOrDefault();
-
-                    if(_type==null)
-                        throw new UnableToFindDownstreamRouteException($"The request address is invalid,No corresponding Orleans interface “{grainInterface}” found. URL:{route.RequestUri}");
-                    return _type;
-                }
-                catch (Exception ex)
-                {
-                    throw new OrleansConfigurationException($"{route.ClientOptions.ServiceName} Orleans Client Options configuration error, unable to find Grain interface", ex);
-                }
-            });
+                  try
+                  {
+                      string grainInterface = this._config.MapRouteToGraininterface.Invoke(route);
+                      return route.ClientOptions.Assembly.ExportedTypes
+                           .Where(f => typeof(IGrain).IsAssignableFrom(f) && f.Name.Equals(grainInterface, StringComparison.OrdinalIgnoreCase))
+                           .FirstOrDefault();
+                  }
+                  catch (Exception ex)
+                  {
+                      throw new OrleansConfigurationException($"{route.ClientOptions.ServiceName} Orleans Client Options configuration error, unable to find Grain interface", ex);
+                  }
+              });
         }
 
         private MethodInfo GetGtainMethods(GrainRouteValues route)
@@ -90,7 +114,7 @@ namespace Ocelot.OrleansHttpGateway.Requester
                         .Where(x => string.Equals(x.Name, route.GrainMethodName, StringComparison.OrdinalIgnoreCase)).ToList();
             });
             if (methods.Count == 0)
-                throw new UnableToFindDownstreamRouteException($"The request address is invalid and the corresponding method in the Orleans interface {route.SiloName}_#_{route.GrainName} was not found. {route.GrainMethodName}. URL:{route.RequestUri}");
+                return null;
 
             //Get the first method, temporarily only support one method with the same name
             return methods.FirstOrDefault();
@@ -103,9 +127,8 @@ namespace Ocelot.OrleansHttpGateway.Requester
             .Where(s => !string.IsNullOrEmpty(s))
             .ToArray();
             if (route.Length < 2 || route.Length > 3)
-            {
-                throw new UnableToFindDownstreamRouteException($"The request address is invalid URL:{context.DownstreamRequest.ToUri()}");
-            }
+                return null;
+
             routeValues.SiloName = context.DownstreamReRoute.ServiceName;
             routeValues.GrainName = route[0];
             routeValues.GrainMethodName = route[1];
@@ -163,6 +186,17 @@ namespace Ocelot.OrleansHttpGateway.Requester
             }
         }
 
+        private ErrorResponse<GrainRouteValues> SetUnknownError(string message)
+        {
+            return new ErrorResponse<GrainRouteValues>(new UnknownError(message));
+        }
+
+
+        private ErrorResponse<GrainRouteValues> SetUnableToFindDownstreamRouteError(DownstreamContext context,string message)
+        {
+            this._logger.LogWarning(message);
+            return new ErrorResponse<GrainRouteValues>(new UnableToFindDownstreamRouteError(context.DownstreamRequest.ToUri(),context.DownstreamRequest.Scheme));
+        }
     }
 
 

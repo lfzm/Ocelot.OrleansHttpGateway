@@ -1,7 +1,11 @@
-﻿using Ocelot.OrleansHttpGateway.Infrastructure;
+﻿using Newtonsoft.Json;
+using Ocelot.Logging;
+using Ocelot.OrleansHttpGateway.Infrastructure;
 using Ocelot.OrleansHttpGateway.Model;
+using Ocelot.Responses;
 using System;
 using System.Collections.Concurrent;
+using System.Net;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
@@ -12,24 +16,40 @@ namespace Ocelot.OrleansHttpGateway.Requester
     {
         private readonly IParameterBinder _parameterBinder;
         private readonly ConcurrentDictionary<string, ObjectMethodExecutor> _cachedExecutors = new ConcurrentDictionary<string, ObjectMethodExecutor>();
+        private readonly IOcelotLogger _logger;
+        private readonly JsonSerializer _jsonSerializer;
 
-        public DynamicGrainMethodInvoker(IParameterBinder parameterBinder)
+        public DynamicGrainMethodInvoker(IParameterBinder parameterBinder, IOcelotLoggerFactory factory, 
+            JsonSerializer jsonSerializer)
         {
-            _parameterBinder = parameterBinder;
+            this._parameterBinder = parameterBinder;
+            this._logger = factory.CreateLogger<DynamicGrainMethodInvoker>();
+            this._jsonSerializer = jsonSerializer;
 
         }
 
-        public async Task<object> Invoke(GrainReference grain, GrainRouteValues route)
+        public async Task<Response<OrleansResponseMessage>> Invoke(GrainReference grain, GrainRouteValues route)
         {
-            string key = $"{route.SiloName}.{route.GrainName}.{route.GrainMethodName}";
-            var executor = _cachedExecutors.GetOrAdd(key, (_key) =>
-             {
-                 ObjectMethodExecutor _executor = ObjectMethodExecutor.Create(route.GrainMethod, grain.GrainType.GetTypeInfo());
-                 return _executor;
-             });
+            try
+            {
+                string key = $"{route.SiloName}.{route.GrainName}.{route.GrainMethodName}";
+                var executor = _cachedExecutors.GetOrAdd(key, (_key) =>
+                 {
+                     ObjectMethodExecutor _executor = ObjectMethodExecutor.Create(route.GrainMethod, grain.GrainType.GetTypeInfo());
+                     return _executor;
+                 });
 
-            var parameters = GetParameters(executor, route);
-            return await this.ExecuteAsync(executor, grain, parameters);
+                var parameters = GetParameters(executor, route);
+                var result = await this.ExecuteAsync(executor, grain, parameters);
+
+                var message = new OrleansResponseMessage(new OrleansContent(result, this._jsonSerializer), HttpStatusCode.OK);
+                return new OkResponse<OrleansResponseMessage>(message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message, ex);
+               return new ErrorResponse<OrleansResponseMessage>(new UnknownError(ex.Message));
+            }
         }
 
         private object[] GetParameters(ObjectMethodExecutor executor, GrainRouteValues route)

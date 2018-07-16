@@ -1,5 +1,6 @@
 ﻿using Ocelot.Middleware;
 using Ocelot.OrleansHttpGateway.Model;
+using Ocelot.Responses;
 using Orleans;
 using System;
 using System.Collections.Generic;
@@ -11,6 +12,6 @@ namespace Ocelot.OrleansHttpGateway.Requester
     public interface IClusterClientBuilder
     {
         IClusterClient GetClusterClient<TGrainInterface>();
-        void Build(GrainRouteValues routeValues, DownstreamContext context);
+        Response Build(GrainRouteValues routeValues, DownstreamContext context);
     }
 }

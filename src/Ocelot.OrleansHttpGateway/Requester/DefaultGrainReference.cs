@@ -1,6 +1,8 @@
-﻿using Ocelot.Logging;
+﻿using Ocelot.DownstreamRouteFinder.Finder;
+using Ocelot.Logging;
 using Ocelot.OrleansHttpGateway.Infrastructure;
 using Ocelot.OrleansHttpGateway.Model;
+using Ocelot.Responses;
 using Orleans;
 using System;
 using System.Collections.Concurrent;
@@ -28,14 +30,28 @@ namespace Ocelot.OrleansHttpGateway.Requester
             this._logger = factory.CreateLogger<DefaultGrainReference>();
         }
 
-        public GrainReference GetGrainReference(GrainRouteValues route)
+        public Response<GrainReference> GetGrainReference(GrainRouteValues route)
         {
-            var grainFunc = _GrainReferenceCache.GetOrAdd(route.GrainType.FullName, key =>
+            try
             {
-                return this.BuildFactoryMethod(route.GrainType);
-            });
-            var grain = grainFunc(route.GrainId);
-            return new GrainReference(route.GrainType, grain);
+                var grainFunc = _GrainReferenceCache.GetOrAdd(route.GrainType.FullName, key =>
+                    {
+                        return this.BuildFactoryMethod(route.GrainType);
+                    });
+                var grain = grainFunc(route.GrainId);
+                var grainReference = new GrainReference(route.GrainType, grain);
+                return new OkResponse<GrainReference>(grainReference);
+            }
+            catch (UnableToFindDownstreamRouteException ex)
+            {
+                this._logger.LogWarning(ex.Message);
+                return new ErrorResponse<GrainReference>(new UnableToFindDownstreamRouteError(route.RequestUri, "orleans"));
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogError(ex.Message,ex);
+                return new ErrorResponse<GrainReference>(new UnknownError(ex.Message));
+            }
         }
 
         private Func<string, object> BuildFactoryMethod(Type grainType)

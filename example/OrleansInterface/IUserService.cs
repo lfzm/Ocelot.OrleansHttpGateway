@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Orleans;
+using Microsoft.AspNetCore.Authorization;
 
 namespace OrleansInterface
 {
@@ -10,6 +11,7 @@ namespace OrleansInterface
     {
         Task<string> GetUserName();
 
+        [Authorize(Roles = "Admin")]
         Task<string> GetUser(string name);
 
         Task<string> GetUser(string name,string sex);

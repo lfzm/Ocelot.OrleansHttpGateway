@@ -47,7 +47,7 @@ namespace Ocelot.DependencyInjection
                 return JsonSerializer.Create(settings);
             });
 
-            services.TryAddSingleton<IOrleansRequester, DefaultOrleansRequester>();
+            services.TryAddSingleton<IOrleansAuthorisation, DefaultOrleansAuthorisation>();
             services.TryAddSingleton<IClusterClientBuilder, DefaultClusterClientBuilder>();
             services.TryAddSingleton<IGrainFactoryProxy, DefaultGrainFactoryProxy>();
             services.TryAddSingleton<IGrainMethodInvoker, DynamicGrainMethodInvoker>();

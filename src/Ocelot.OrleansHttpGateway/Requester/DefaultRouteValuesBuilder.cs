@@ -28,17 +28,15 @@ namespace Ocelot.OrleansHttpGateway.Requester
         private readonly ConcurrentDictionary<string, List<MethodInfo>> _MethodInfoCache = new ConcurrentDictionary<string, List<MethodInfo>>(StringComparer.OrdinalIgnoreCase);
         private readonly OrleansHttpGatewayOptions _options;
         private readonly OrleansRequesterConfiguration _config;
-        private readonly IClaimsParser _claimsParser;
         private readonly IOcelotLogger _logger;
 
         public DefaultRouteValuesBuilder(IOptions<OrleansHttpGatewayOptions> options
             , IOptions<OrleansRequesterConfiguration> config
-           , IOcelotLoggerFactory factory, IClaimsParser claimsParser)
+           , IOcelotLoggerFactory factory)
         {
             this._config = config?.Value;
             this._options = options.Value;
             this._logger = factory.CreateLogger<DefaultRouteValuesBuilder>();
-            this._claimsParser = claimsParser;
         }
         public Response<GrainRouteValues> Build(DownstreamContext context)
         {
@@ -46,23 +44,23 @@ namespace Ocelot.OrleansHttpGateway.Requester
             {
                 GrainRouteValues route = this.GetRequestRoute(context);
                 if (route == null)
-                    return this.SetUnableToFindDownstreamRouteError(context,$"The request address is invalid URL:{context.DownstreamRequest.ToUri()}");
+                    return this.SetUnableToFindDownstreamRouteError(context, $"The request address is invalid URL:{context.DownstreamRequest.ToUri()}");
 
                 this._logger.LogDebug($"Http address translation Orleans request address {context.DownstreamRequest.ToUri()}");
 
                 //Get client option based on serviceName
                 if (!_options.Clients.ContainsKey(route.SiloName))
-                    return this.SetUnableToFindDownstreamRouteError(context,$"{nameof(OrleansClientOptions)} without {route.SiloName} configured ");
+                    return this.SetUnableToFindDownstreamRouteError(context, $"{nameof(OrleansClientOptions)} without {route.SiloName} configured ");
                 route.ClientOptions = _options.Clients[route.SiloName];
 
                 //Find the request corresponding to the Orleans interface
                 route.GrainType = this.GetGrainType(route);
                 if (route.GrainType == null)
-                    return this.SetUnableToFindDownstreamRouteError(context,$"The request address is invalid,No corresponding Orleans interface  found. URL:{route.RequestUri}");
+                    return this.SetUnableToFindDownstreamRouteError(context, $"The request address is invalid,No corresponding Orleans interface  found. URL:{route.RequestUri}");
                 //Find the request corresponding to the method in the Orleans interface
                 route.GrainMethod = this.GetGtainMethods(route);
                 if (route.GrainMethod == null)
-                    return this.SetUnableToFindDownstreamRouteError(context,$"The request address is invalid and the corresponding method in the Orleans interface {route.SiloName}_#_{route.GrainName} was not found. {route.GrainMethodName}. URL:{route.RequestUri}");
+                    return this.SetUnableToFindDownstreamRouteError(context, $"The request address is invalid and the corresponding method in the Orleans interface {route.SiloName}_#_{route.GrainName} was not found. {route.GrainMethodName}. URL:{route.RequestUri}");
 
                 return new OkResponse<GrainRouteValues>(route);
             }
@@ -134,10 +132,10 @@ namespace Ocelot.OrleansHttpGateway.Requester
             routeValues.GrainMethodName = route[1];
             routeValues.RequestUri = context.DownstreamRequest.ToUri();
 
-            //Claims to Claims Tranformation Whether to inject GrainKay
-            var response = this._claimsParser.GetValue(context.HttpContext.User.Claims, "GrainKay", "", 0);
-            if (!response.IsError)
-                routeValues.GrainId = response.Data;
+            //Claims to Claims Tranformation Whether to inject GrainKey
+            var claim = context.HttpContext.User.FindFirst("GrainKey");
+            if (claim != null)
+                routeValues.GrainId = claim.Value;
             else
                 routeValues.GrainId = (route.Length == 3) ? route[2] : null;
 
@@ -192,10 +190,10 @@ namespace Ocelot.OrleansHttpGateway.Requester
         }
 
 
-        private ErrorResponse<GrainRouteValues> SetUnableToFindDownstreamRouteError(DownstreamContext context,string message)
+        private ErrorResponse<GrainRouteValues> SetUnableToFindDownstreamRouteError(DownstreamContext context, string message)
         {
             this._logger.LogWarning(message);
-            return new ErrorResponse<GrainRouteValues>(new UnableToFindDownstreamRouteError(context.DownstreamRequest.ToUri(),context.DownstreamRequest.Scheme));
+            return new ErrorResponse<GrainRouteValues>(new UnableToFindDownstreamRouteError(context.DownstreamRequest.ToUri(), context.DownstreamRequest.Scheme));
         }
     }
 

@@ -15,11 +15,6 @@ namespace Ocelot.OrleansHttpGateway.Requester
 {
     public class DefaultOrleansAuthorisation : IOrleansAuthorisation
     {
-        private readonly IClaimsParser _claimsParser;
-        public DefaultOrleansAuthorisation(IClaimsParser claimsParser)
-        {
-            this._claimsParser = claimsParser;
-        }
 
         public Response<bool> Authorise(ClaimsPrincipal claimsPrincipal, GrainRouteValues route)
         {
@@ -48,22 +43,14 @@ namespace Ocelot.OrleansHttpGateway.Requester
         private Response<bool> AuthoriseRole(ClaimsPrincipal claimsPrincipal, string role)
         {
             var roles = role.Split(string.Empty.ToCharArray()).Where(f => !string.IsNullOrEmpty(f)).ToList();
-            var values = _claimsParser.GetValuesByClaimType(claimsPrincipal.Claims, JwtClaimTypes.Role);
-            if (values.IsError)
-                return new ErrorResponse<bool>(values.Errors);
-
-
-            if (values.Data == null)
-                return new ErrorResponse<bool>(new UserDoesNotHaveClaimError($"user does not have claim {JwtClaimTypes.Role}"));
-
-            bool authorised = roles.Intersect(values.Data).ToArray().Length > 0;
-            if (!authorised)
+         
+            foreach (var r in roles)
             {
-                return new ErrorResponse<bool>(new ClaimValueNotAuthorisedError(
-                        $"claim value: {values.Data} is not the same as required value:{role} for type:  { JwtClaimTypes.Role}"));
+                if (claimsPrincipal.IsInRole(r))
+                    return new OkResponse<bool>(true);
             }
-            else
-                return new OkResponse<bool>(true);
+            return new ErrorResponse<bool>(new ClaimValueNotAuthorisedError(
+                        $"Authorization does not include role value {role}"));
         }
 
         private Response<bool> AuthorisePolicy(ClaimsPrincipal claimsPrincipal, string policy)
@@ -71,11 +58,8 @@ namespace Ocelot.OrleansHttpGateway.Requester
             var policys = policy.Split(string.Empty.ToCharArray()).Where(f => !string.IsNullOrEmpty(f)).ToList();
             foreach (var p in policys)
             {
-                var values = _claimsParser.GetValuesByClaimType(claimsPrincipal.Claims, p);
-                if (values.IsError)
-                    return new ErrorResponse<bool>(values.Errors);
-
-                if (values.Data.Count == 0)
+                IEnumerable<Claim> claims = claimsPrincipal.FindAll(p);
+                if (claims.Count() == 0)
                 {
                     return new ErrorResponse<bool>(new ClaimValueNotAuthorisedError(
                          $"Claim does not contain {p}"));

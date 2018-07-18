@@ -89,7 +89,7 @@ namespace Ocelot.OrleansHttpGateway.Requester
             }
 
             //TODO：Determine if it is Consul load balancing
-            if (context.Configuration.ServiceProviderConfiguration == null)
+            if (context.Configuration.ServiceProviderConfiguration != null)
             {
                 var config = context.Configuration.ServiceProviderConfiguration;
                 if (config.Type.Equals("consul", StringComparison.OrdinalIgnoreCase))

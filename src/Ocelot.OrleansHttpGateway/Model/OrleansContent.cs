@@ -1,10 +1,7 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading.Tasks;
@@ -23,6 +20,10 @@ namespace Ocelot.OrleansHttpGateway.Model
 
         protected override async Task SerializeToStreamAsync(Stream stream, TransportContext context)
         {
+            //StreamWriter writer = new StreamWriter(stream);
+            //writer.Write(JsonConvert.SerializeObject(_result));
+            //await writer.FlushAsync();
+
             var writer = new StreamWriter(stream);
             this._jsonSerializer.Serialize(writer, _result);
             await writer.FlushAsync();
@@ -30,12 +31,7 @@ namespace Ocelot.OrleansHttpGateway.Model
 
         protected override bool TryComputeLength(out long length)
         {
-            using (MemoryStream ms = new MemoryStream())
-            {
-                IFormatter iFormatter = new BinaryFormatter();
-                iFormatter.Serialize(ms, _result);
-                length = ms.GetBuffer().Length;
-            }
+            length = 1;
             return true;
         }
     }

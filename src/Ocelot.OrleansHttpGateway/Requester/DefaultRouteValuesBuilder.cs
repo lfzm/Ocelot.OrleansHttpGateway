@@ -10,6 +10,7 @@ using Ocelot.Middleware;
 using Ocelot.OrleansHttpGateway.Configuration;
 using Ocelot.OrleansHttpGateway.Infrastructure;
 using Ocelot.OrleansHttpGateway.Model;
+using Ocelot.Request.Middleware;
 using Ocelot.Responses;
 using Orleans;
 using System;
@@ -142,7 +143,7 @@ namespace Ocelot.OrleansHttpGateway.Requester
             try
             {
                 routeValues.Querys = this.GetQueryParameter(context.DownstreamRequest.Query);
-                routeValues.Body = this.GetBodyParameter(context.HttpContext.Request);
+                routeValues.Body = this.GetBodyParameter(context.DownstreamRequest, context.HttpContext.Request);
             }
             catch (Exception ex)
             {
@@ -158,26 +159,23 @@ namespace Ocelot.OrleansHttpGateway.Requester
             return new QueryCollection(querys);
         }
 
-        private JObject GetBodyParameter(HttpRequest request)
+        private JObject GetBodyParameter(DownstreamRequest request, HttpRequest httpRequest)
         {
-            var requestContentType = request.GetTypedHeaders().ContentType;
+            var requestContentType = httpRequest.GetTypedHeaders().ContentType;
             if (requestContentType?.MediaType != "application/json")
                 return new JObject();
 
-            if (!request.Body.CanSeek)
-            {
-                // JSON.Net does synchronous reads. In order to avoid blocking on the stream, we asynchronously 
-                // read everything into a buffer, and then seek back to the beginning. 
-                request.EnableRewind();
-            }
-            request.Body.Seek(0L, SeekOrigin.Begin);
+            request.Scheme = "http";
+            var requestMessage = request.ToHttpRequestMessage();
+            request.Scheme = "orleans";
+            if (requestMessage.Content == null)
+                return new JObject();
 
             // parse encoding
             // default to UTF8
-            var encoding = request.GetTypedHeaders().ContentType.Encoding ?? Encoding.UTF8;
-            if (request.Body.Length == 0)
-                return new JObject();
-            using (var reader = new JsonTextReader(new StreamReader(request.Body, encoding)))
+            var encoding = httpRequest.GetTypedHeaders().ContentType.Encoding ?? Encoding.UTF8;
+            var stream = requestMessage.Content.ReadAsStreamAsync().Result;
+            using (var reader = new JsonTextReader(new StreamReader(stream, encoding)))
             {
                 reader.CloseInput = false;
                 return JObject.Load(reader);

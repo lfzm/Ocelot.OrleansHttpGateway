@@ -32,7 +32,7 @@ namespace Ocelot.OrleansHttpGateway.Requester
                 }
                 if (!string.IsNullOrEmpty(attr.Policy))
                 {
-                    var response = this.AuthorisePolicy(claimsPrincipal, attr.Roles);
+                    var response = this.AuthorisePolicy(claimsPrincipal, attr.Policy);
                     if (response.IsError || !response.Data)
                         return response;
                 }

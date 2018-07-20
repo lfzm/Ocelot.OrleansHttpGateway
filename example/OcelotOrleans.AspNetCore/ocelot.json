@@ -13,7 +13,7 @@
       ],
       "ServiceName": "uc",
       "AuthenticationOptions": {
-        "AuthenticationProviderKey": "oidc",
+        "AuthenticationProviderKey": "uc",
         "AllowedScopes": [ "COTC_API" ]
       },
       "AddClaimsToRequest": {
@@ -27,9 +27,10 @@
   "Orleans": {
     "Clients": {
       "uc": {
+        "ServiceName": "uc",
         "ServiceId": "dev",
         "ClusterId": "dev",
-        "InterfaceDllPathName": "E:\\工作项目\\project_Zop\\Components\\Orleans.HttpGateway\\example\\OrleansHost\\bin\\Debug\\netcoreapp2.1\\OrleansInterface.dll",
+        "InterfaceDllPathName": "E:\\工作项目\\project_Zop\\Components\\Ocelot.OrleansHttpGateway\\example\\OrleansInterface\\bin\\Debug\\netstandard2.0\\OrleansInterface.dll",
         "InterfaceNameTemplate": "I{GrainName}Service"
       }
     }

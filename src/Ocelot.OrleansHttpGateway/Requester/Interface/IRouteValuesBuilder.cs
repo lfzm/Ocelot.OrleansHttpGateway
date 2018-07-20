@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Ocelot.Middleware;
 using Ocelot.OrleansHttpGateway.Model;
+using Ocelot.Responses;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -12,6 +13,6 @@ namespace Ocelot.OrleansHttpGateway.Requester
     /// </summary>
     public interface IRouteValuesBuilder
     {
-        GrainRouteValues Build(DownstreamContext context);
+        Response<GrainRouteValues> Build(DownstreamContext context);
     }
 }

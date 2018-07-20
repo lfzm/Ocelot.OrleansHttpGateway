@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Orleans;
+using Microsoft.AspNetCore.Authorization;
 
 namespace OrleansInterface
 {
-    public interface  IUserService:IGrainWithGuidKey
+    public interface  IUserService:IGrainWithIntegerKey
     {
         Task<string> GetUserName();
 
+        [Authorize(Roles = "User")]
         Task<string> GetUser(string name);
 
         Task<string> GetUser(string name,string sex);

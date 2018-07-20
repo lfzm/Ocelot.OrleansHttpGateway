@@ -1,19 +1,18 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.Extensions.Options;
 using Ocelot.Logging;
 using Ocelot.Middleware;
 using Ocelot.OrleansHttpGateway.Configuration;
 using Ocelot.OrleansHttpGateway.Model;
+using Ocelot.Responses;
 using Orleans;
-using Orleans.Hosting;
 using Orleans.Configuration;
-using Microsoft.Extensions.Options;
+using Orleans.Hosting;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Threading.Tasks;
 
 namespace Ocelot.OrleansHttpGateway.Requester
 {
@@ -27,16 +26,25 @@ namespace Ocelot.OrleansHttpGateway.Requester
             this._logger = factory.CreateLogger<DefaultClusterClientBuilder>();
             this._options = options.Value;
         }
-        public void Build(GrainRouteValues routeValues, DownstreamContext context)
+        public Response Build(GrainRouteValues routeValues, DownstreamContext context)
         {
-            string clientKey = this.GetClientKey(routeValues.GrainType);
-            if (clusterClientCache.Keys.Where(f => f == clientKey).Count() > 0)
-                return;
-
-            clusterClientCache.GetOrAdd(clientKey, (key) =>
+            try
             {
-                return this.BuildClusterClient(routeValues, context);
-            });
+                string clientKey = this.GetClientKey(routeValues.GrainType);
+                if (clusterClientCache.Keys.Where(f => f == clientKey).Count() > 0)
+                    return new OkResponse();
+
+                clusterClientCache.GetOrAdd(clientKey, (key) =>
+                {
+                    return this.BuildClusterClient(routeValues, context);
+                });
+                return new OkResponse();
+            }
+            catch (Exception ex)
+            {
+                this._logger.LogError(ex.Message, ex);
+                return new ErrorResponse<GrainRouteValues>(new UnknownError(ex.Message));
+            }
         }
 
         public IClusterClient GetClusterClient<TGrainInterface>()
@@ -81,10 +89,10 @@ namespace Ocelot.OrleansHttpGateway.Requester
             }
 
             //TODO：Determine if it is Consul load balancing
-            if (context.Configuration.ServiceProviderConfiguration == null)
+            if (context.Configuration.ServiceProviderConfiguration != null)
             {
                 var config = context.Configuration.ServiceProviderConfiguration;
-                if (config.Type.Equals("consul",StringComparison.OrdinalIgnoreCase) )
+                if (config.Type.Equals("consul", StringComparison.OrdinalIgnoreCase))
                 {
                     build.UseConsulClustering(opt =>
                     {

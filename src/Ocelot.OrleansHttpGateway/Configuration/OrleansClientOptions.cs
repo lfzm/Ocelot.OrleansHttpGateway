@@ -12,8 +12,8 @@ namespace Ocelot.OrleansHttpGateway.Configuration
         /// <summary>
         /// Orleans Grain Interface path name
         /// </summary>
-        public string InterfaceDllPathName { get; set; }
-        public string InterfaceNameTemplate { get; set; }
+        public string ServiceInterfaceDllAbsolutePath { get; set; }
+        public string ServiceName { get; set; }
 
         private Assembly assembly;
         internal Assembly Assembly
@@ -21,7 +21,11 @@ namespace Ocelot.OrleansHttpGateway.Configuration
             get
             {
                 if (assembly == null)
-                    assembly = Assembly.LoadFile(this.InterfaceDllPathName);
+                {
+                    //获取应用程序所在目录（绝对，不受工作目录影响，建议采用此方法获取路径）
+                    var basePath = System.IO.Directory.GetCurrentDirectory();
+                    assembly = Assembly.LoadFile(basePath+this.ServiceInterfaceDllAbsolutePath);
+                }
 
                 return assembly;
             }

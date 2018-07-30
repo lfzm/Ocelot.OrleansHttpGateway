@@ -28,15 +28,7 @@ public static class OcelotPipelineConfigurationExtensions
 
     private static Predicate AddOrleansHttpGateway(this IOcelotPipelineBuilder builder, OcelotPipelineConfiguration pipelineConfiguration)
     {
-        // Allow the user to respond with absolutely anything they want.
-        builder.UseIfNotNull(pipelineConfiguration.PreErrorResponderMiddleware);
-
-        // This is registered first so it can catch any errors and issue an appropriate response
-        builder.UseResponderMiddleware();
-
-        // Then we get the downstream route information
-        builder.UseDownstreamRouteFinderMiddleware();
-
+       
         // Now we have the ds route we can transform headers and stuff?
         builder.UseHttpHeadersTransformationMiddleware();
 

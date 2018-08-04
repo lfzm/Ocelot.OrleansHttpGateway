@@ -13,10 +13,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Orleans.Core" Version="2.0.3" />
     <PackageReference Include="Microsoft.Orleans.OrleansConsulUtils" Version="2.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\..\..\..\Source\Ocelot\src\Ocelot\Ocelot.csproj" />
+    <PackageReference Include="Ocelot" Version="8.0.7" />
   </ItemGroup>
 
 </Project>

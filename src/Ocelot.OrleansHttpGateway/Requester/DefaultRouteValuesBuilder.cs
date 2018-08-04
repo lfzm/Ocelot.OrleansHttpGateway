@@ -93,8 +93,8 @@ namespace Ocelot.OrleansHttpGateway.Requester
                   try
                   {
                       string grainInterface = this._config.MapRouteToGraininterface.Invoke(route);
-                      return route.ClientOptions.Assembly.ExportedTypes
-                           .Where(f => typeof(IGrain).IsAssignableFrom(f) && f.Name.Equals(grainInterface, StringComparison.OrdinalIgnoreCase))
+                      var types = route.ClientOptions.Assembly.GetExportedTypes();
+                      return types.Where(f => typeof(IGrain).IsAssignableFrom(f) && f.Name.Equals(grainInterface, StringComparison.OrdinalIgnoreCase))
                            .FirstOrDefault();
                   }
                   catch (Exception ex)

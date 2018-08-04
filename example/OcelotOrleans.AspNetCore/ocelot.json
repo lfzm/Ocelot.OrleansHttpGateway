@@ -11,14 +11,14 @@
           "Port": 30000
         }
       ],
-      "ServiceName": "uc",
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "uc",
-        "AllowedScopes": [ "COTC_API" ]
-      },
-      "AddClaimsToRequest": {
-        "GrainKey": "Claims[http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier] > value"
-      }
+      "ServiceName": "uc"
+      //"AuthenticationOptions": {
+      //  "AuthenticationProviderKey": "uc",
+      //  "AllowedScopes": [ "COTC_API" ]
+      //},
+      //"AddClaimsToRequest": {
+      //  "GrainKey": "Claims[http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier] > value"
+      //}
     }
   ],
   "GlobalConfiguration": {

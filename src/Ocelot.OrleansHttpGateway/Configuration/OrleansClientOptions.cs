@@ -25,7 +25,6 @@ namespace Ocelot.OrleansHttpGateway.Configuration
                     //获取应用程序所在目录（绝对，不受工作目录影响，建议采用此方法获取路径）
                     var basePath = System.IO.Directory.GetCurrentDirectory();
                     var path = basePath + this.ServiceInterfaceDllAbsolutePath;
-                    
                     assembly = Assembly.LoadFrom(path);
                 }
 

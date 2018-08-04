@@ -2,6 +2,17 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Version>1.0.1</Version>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>aqa510415008</Authors>
+    <Company>aling</Company>
+    <Product>Ocelot.OrleansHttpGateway</Product>
+    <Description>Ocelot extends Orleans components, Api Gateway</Description>
+    <PackageLicenseUrl />
+    <PackageProjectUrl>https://github.com/aqa510415008/Ocelot.OrleansHttpGateway</PackageProjectUrl>
+    <PackageIconUrl>http://threemammals.com/images/ocelot_logo.png</PackageIconUrl>
+    <RepositoryUrl>https://github.com/aqa510415008/Ocelot.OrleansHttpGateway</RepositoryUrl>
+    <PackageTags>ApiGateway  Orleans Ocelot</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>

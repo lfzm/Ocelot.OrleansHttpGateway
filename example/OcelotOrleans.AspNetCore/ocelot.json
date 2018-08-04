@@ -30,7 +30,7 @@
         "ServiceName": "uc",
         "ServiceId": "dev",
         "ClusterId": "dev",
-        "InterfaceDllPathName": "E:\\工作项目\\project_Zop\\Components\\Ocelot.OrleansHttpGateway\\example\\OrleansInterface\\bin\\Debug\\netstandard2.0\\OrleansInterface.dll",
+        "ServiceInterfaceDllAbsolutePath": "\\bin\\Debug\\netcoreapp2.1\\OrleansInterface.dll",
         "InterfaceNameTemplate": "I{GrainName}Service"
       }
     }

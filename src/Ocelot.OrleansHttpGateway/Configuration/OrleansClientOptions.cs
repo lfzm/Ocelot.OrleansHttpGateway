@@ -26,7 +26,7 @@ namespace Ocelot.OrleansHttpGateway.Configuration
                     var basePath = System.IO.Directory.GetCurrentDirectory();
                     var path = basePath + this.ServiceInterfaceDllAbsolutePath;
                     
-                    assembly = Assembly.LoadFile(path);
+                    assembly = Assembly.LoadFrom(path);
                 }
 
                 return assembly;

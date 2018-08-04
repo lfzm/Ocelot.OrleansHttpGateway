@@ -12,7 +12,6 @@ using System.Reflection;
 
 namespace Ocelot.OrleansHttpGateway.Requester
 {
-
     internal class DefaultGrainReference : IGrainReference
     {
         private readonly ConcurrentDictionary<string, Func<string, object>> _GrainReferenceCache = new ConcurrentDictionary<string, Func<string, object>>(StringComparer.OrdinalIgnoreCase);
@@ -83,7 +82,11 @@ namespace Ocelot.OrleansHttpGateway.Requester
                     else if (parameters.Where(f => f.ParameterType == typeof(Guid)).Count() > 0)
                         id = Guid.NewGuid().ToString();
                     else
-                        id = string.Empty;
+                    {
+                        Random rd = new Random();
+                        id = "ocelot_#"+ rd.Next(0,100000);
+                    }
+                     
                 }
 
                 var idParts = id.Split(idseperator, StringSplitOptions.RemoveEmptyEntries);

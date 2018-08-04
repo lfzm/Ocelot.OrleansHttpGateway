@@ -30,7 +30,7 @@
         "ServiceName": "uc",
         "ServiceId": "dev",
         "ClusterId": "dev",
-        "ServiceInterfaceDllAbsolutePath": "\\bin\\Debug\\netcoreapp2.1\\OrleansInterface.dll",
+        "ServiceInterfaceDllAbsolutePath": "\\wwwroot\\OrleansInterface.dll"
       }
     }
   }

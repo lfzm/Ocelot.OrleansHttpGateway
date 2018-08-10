@@ -175,6 +175,9 @@ namespace Ocelot.OrleansHttpGateway.Requester
             // default to UTF8
             var encoding = httpRequest.GetTypedHeaders().ContentType.Encoding ?? Encoding.UTF8;
             var stream = requestMessage.Content.ReadAsStreamAsync().Result;
+            if(stream.Length==0)
+                return new JObject();
+
             using (var reader = new JsonTextReader(new StreamReader(stream, encoding)))
             {
                 reader.CloseInput = false;

@@ -43,10 +43,11 @@ namespace Ocelot.OrleansHttpGateway.Requester
         private Response<bool> AuthoriseRole(ClaimsPrincipal claimsPrincipal, string role)
         {
             var roles = role.Split(string.Empty.ToCharArray()).Where(f => !string.IsNullOrEmpty(f)).ToList();
-         
             foreach (var r in roles)
             {
-                if (claimsPrincipal.IsInRole(r))
+                if(claimsPrincipal.IsInRole(r))
+                    return new OkResponse<bool>(true);
+                if (claimsPrincipal.HasClaim("role",r))
                     return new OkResponse<bool>(true);
             }
             return new ErrorResponse<bool>(new ClaimValueNotAuthorisedError(

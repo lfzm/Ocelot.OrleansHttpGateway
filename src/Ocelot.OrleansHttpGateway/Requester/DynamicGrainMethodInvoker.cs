@@ -30,16 +30,24 @@ namespace Ocelot.OrleansHttpGateway.Requester
 
         public async Task<Response<OrleansResponseMessage>> Invoke(GrainReference grain, GrainRouteValues route)
         {
-
-            string key = $"{route.SiloName}.{route.GrainName}.{route.GrainMethodName}";
-            var executor = _cachedExecutors.GetOrAdd(key, (_key) =>
-             {
-                 ObjectMethodExecutor _executor = ObjectMethodExecutor.Create(route.GrainMethod, grain.GrainType.GetTypeInfo());
-                 return _executor;
-             });
-            var parameters = GetParameters(executor, route);
+            ObjectMethodExecutor executor;
+            object[] parameters;
+            try
+            {
+                string key = $"{route.SiloName}.{route.GrainName}.{route.GrainMethodName}";
+                executor = _cachedExecutors.GetOrAdd(key, (_key) =>
+                {
+                    ObjectMethodExecutor _executor = ObjectMethodExecutor.Create(route.GrainMethod, grain.GrainType.GetTypeInfo());
+                    return _executor;
+                });
+                parameters = GetParameters(executor, route);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message, ex);
+                return new ErrorResponse<OrleansResponseMessage>(new UnknownError(ex.Message));
+            }
             var result = await this.ExecuteAsync(executor, grain, parameters);
-
             var message = new OrleansResponseMessage(new OrleansContent(result, this._jsonSerializer), HttpStatusCode.OK);
             return new OkResponse<OrleansResponseMessage>(message);
         }

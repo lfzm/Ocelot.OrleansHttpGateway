@@ -19,7 +19,7 @@ namespace Ocelot.OrleansHttpGateway.Requester
         private readonly IOcelotLogger _logger;
         private readonly JsonSerializer _jsonSerializer;
 
-        public DynamicGrainMethodInvoker(IParameterBinder parameterBinder, IOcelotLoggerFactory factory, 
+        public DynamicGrainMethodInvoker(IParameterBinder parameterBinder, IOcelotLoggerFactory factory,
             JsonSerializer jsonSerializer)
         {
             this._parameterBinder = parameterBinder;
@@ -30,26 +30,18 @@ namespace Ocelot.OrleansHttpGateway.Requester
 
         public async Task<Response<OrleansResponseMessage>> Invoke(GrainReference grain, GrainRouteValues route)
         {
-            try
-            {
-                string key = $"{route.SiloName}.{route.GrainName}.{route.GrainMethodName}";
-                var executor = _cachedExecutors.GetOrAdd(key, (_key) =>
-                 {
-                     ObjectMethodExecutor _executor = ObjectMethodExecutor.Create(route.GrainMethod, grain.GrainType.GetTypeInfo());
-                     return _executor;
-                 });
 
-                var parameters = GetParameters(executor, route);
-                var result = await this.ExecuteAsync(executor, grain, parameters);
+            string key = $"{route.SiloName}.{route.GrainName}.{route.GrainMethodName}";
+            var executor = _cachedExecutors.GetOrAdd(key, (_key) =>
+             {
+                 ObjectMethodExecutor _executor = ObjectMethodExecutor.Create(route.GrainMethod, grain.GrainType.GetTypeInfo());
+                 return _executor;
+             });
+            var parameters = GetParameters(executor, route);
+            var result = await this.ExecuteAsync(executor, grain, parameters);
 
-                var message = new OrleansResponseMessage(new OrleansContent(result, this._jsonSerializer), HttpStatusCode.OK);
-                return new OkResponse<OrleansResponseMessage>(message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex.Message, ex);
-               return new ErrorResponse<OrleansResponseMessage>(new UnknownError(ex.Message));
-            }
+            var message = new OrleansResponseMessage(new OrleansContent(result, this._jsonSerializer), HttpStatusCode.OK);
+            return new OkResponse<OrleansResponseMessage>(message);
         }
 
         private object[] GetParameters(ObjectMethodExecutor executor, GrainRouteValues route)

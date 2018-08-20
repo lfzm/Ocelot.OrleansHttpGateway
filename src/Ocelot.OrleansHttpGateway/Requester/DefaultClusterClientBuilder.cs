@@ -69,7 +69,7 @@ namespace Ocelot.OrleansHttpGateway.Requester
             build = this.UseServiceDiscovery(build, context);
             var client = build.Build();
 
-            return this.ConnectClient(routeValues.GrainName, client);
+            return this.ConnectClient(routeValues.SiloName, client);
 
         }
 

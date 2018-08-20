@@ -7,6 +7,7 @@ using Ocelot.Responses;
 using Orleans;
 using Orleans.Configuration;
 using Orleans.Hosting;
+using Orleans.Runtime;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -110,28 +111,34 @@ namespace Ocelot.OrleansHttpGateway.Requester
         }
         private IClusterClient ConnectClient(string serviceName, IClusterClient client)
         {
-            int attempt = 0;
-            while (true)
+            try
             {
-                try
-                {
-                    client.Connect().Wait();
-                    _logger.LogDebug($"Connection {serviceName} Sucess...");
-                    return client;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError($"Connection {serviceName} Faile...", ex);
-                    attempt++;
-                    if (attempt <= this._options.InitializeAttemptsBeforeFailing)
-                    {
-                        _logger.LogDebug($"Attempt {attempt} of " + this._options.InitializeAttemptsBeforeFailing + " failed to initialize the Orleans client.");
-                        Task.Delay(TimeSpan.FromSeconds(4)).Wait();
-                        continue;
-                    }
-                    throw new OrleansConnectionFailedException($"Connection {serviceName} Faile...");
-                }
+                client.Connect(RetryFilter).Wait();
+                _logger.LogDebug($"Connection {serviceName} Sucess...");
+                return client;
             }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Connection {serviceName} Faile...", ex);
+                throw new OrleansConnectionFailedException($"Connection {serviceName} Faile...");
+            }
+        }
+        private int attempt = 0;
+        private async Task<bool> RetryFilter(Exception exception)
+        {
+            if (exception.GetType() != typeof(SiloUnavailableException))
+            {
+                Console.WriteLine($"Cluster client failed to connect to cluster with unexpected error.  Exception: {exception}");
+                return false;
+            }
+            attempt++;
+            Console.WriteLine($"Cluster client attempt {attempt} of {this._options.InitializeAttemptsBeforeFailing} failed to connect to cluster.  Exception: {exception}");
+            if (attempt > this._options.InitializeAttemptsBeforeFailing)
+            {
+                return false;
+            }
+            await Task.Delay(TimeSpan.FromSeconds(4));
+            return true;
         }
         private string GetClientKey(Type type)
         {

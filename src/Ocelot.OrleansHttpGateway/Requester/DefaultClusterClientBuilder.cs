@@ -6,7 +6,6 @@ using Ocelot.OrleansHttpGateway.Model;
 using Ocelot.Responses;
 using Orleans;
 using Orleans.Configuration;
-using Orleans.Hosting;
 using Orleans.Runtime;
 using System;
 using System.Collections.Concurrent;
@@ -21,11 +20,13 @@ namespace Ocelot.OrleansHttpGateway.Requester
     {
         private readonly ConcurrentDictionary<string, IClusterClient> clusterClientCache = new ConcurrentDictionary<string, IClusterClient>();
         private readonly OrleansHttpGatewayOptions _options;
+        private readonly OrleansRequesterConfiguration _requesterConfig;
         private readonly IOcelotLogger _logger;
-        public DefaultClusterClientBuilder(IOptions<OrleansHttpGatewayOptions> options, IOcelotLoggerFactory factory)
+        public DefaultClusterClientBuilder(IOptions<OrleansHttpGatewayOptions> options, IOptions<OrleansRequesterConfiguration> requesterConfig, IOcelotLoggerFactory factory)
         {
             this._logger = factory.CreateLogger<DefaultClusterClientBuilder>();
             this._options = options.Value;
+            this._requesterConfig = requesterConfig.Value;
         }
         public Response Build(GrainRouteValues routeValues, DownstreamContext context)
         {
@@ -93,17 +94,11 @@ namespace Ocelot.OrleansHttpGateway.Requester
             if (context.Configuration.ServiceProviderConfiguration != null)
             {
                 var config = context.Configuration.ServiceProviderConfiguration;
-                if (config.Type.Equals("consul", StringComparison.OrdinalIgnoreCase))
-                {
-                    build.UseConsulClustering(opt =>
-                    {
-                        opt.Address = new Uri($"http://{config.Host}:{config.Port}");
-                        this._logger.LogDebug($"Orleans uses Consul Clustering's address is { opt.Address.ToString()}");
-                    });
-                    return build;
-                }
-                this._logger.LogError($"Does not support {config.Type} service discovery", null);
-                throw new OrleansConfigurationException($"Does not support {config.Type} service discovery");
+                if (this._requesterConfig == null)
+                    throw new OrleansConfigurationException($"Configuring service discovery in OrleansRequesterConfiguration.ServiceDiscoveryConfig : {config.Type}");
+                //Call the configured service discovery 
+                this._requesterConfig.ServiceDiscoveryConfig(config, build);
+                return build;
             }
 
             throw new OrleansConfigurationException($"No service discovery address configured");

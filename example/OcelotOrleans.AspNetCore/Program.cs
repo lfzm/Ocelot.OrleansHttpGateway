@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -12,6 +6,10 @@ using Microsoft.Extensions.Primitives;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
 using Ocelot.OrleansHttpGateway.Configuration;
+using Ocelot.OrleansHttpGateway.Requester;
+using Orleans.Hosting;
+using System;
+using System.IO;
 
 namespace OcelotOrleans.AspNetCore
 {
@@ -35,11 +33,11 @@ namespace OcelotOrleans.AspNetCore
            {
                s.AddAuthentication()
                     .AddJwtBearer("uc", x =>
-                   {
-                       x.RequireHttpsMetadata = false;
-                       x.Authority = "http://auth.zop.alingfly.com/";
-                       x.Audience = "COTC_API";
-                   })
+                    {
+                        x.RequireHttpsMetadata = false;
+                        x.Authority = "http://auth.zop.alingfly.com/";
+                        x.Audience = "COTC_API";
+                    })
                    .AddJwtBearer("cotc", x =>
                    {
                        x.RequireHttpsMetadata = false;
@@ -59,6 +57,17 @@ namespace OcelotOrleans.AspNetCore
                             Orleans.Runtime.RequestContext.Set("Client-IP", context.HttpContext.Connection.RemoteIpAddress.ToString());
                             if (context.HttpContext.Request.Headers.TryGetValue("Authorization", out StringValues value))
                                 Orleans.Runtime.RequestContext.Set("Authorization", value);
+                        };
+                        config.ServiceDiscoveryConfig = (con, build) =>
+                        {
+                            if (con.Type.Equals("consul", StringComparison.OrdinalIgnoreCase))
+                            {
+                                build.UseConsulClustering(opt =>
+                                {
+                                    opt.Address = new Uri($"http://{con.Host}:{con.Port}");
+                                });
+                            }
+                            throw new OrleansConfigurationException($"Does not support {con.Type} service discovery");
                         };
                     });
            })

@@ -1,15 +1,11 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Authorization;
+using Ocelot.Authorisation;
+using Ocelot.OrleansHttpGateway.Model;
+using Ocelot.Responses;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Security.Claims;
-using System.Text;
-using Microsoft.AspNetCore.Authorization;
-using Ocelot.Authorisation;
-using Ocelot.OrleansHttpGateway.Model;
-using Ocelot.Responses;
-using IdentityModel;
-using Ocelot.Infrastructure.Claims.Parser;
 
 namespace Ocelot.OrleansHttpGateway.Requester
 {

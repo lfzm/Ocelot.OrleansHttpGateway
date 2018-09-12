@@ -21,9 +21,7 @@
       //}
     }
   ],
-  "GlobalConfiguration": {
-    "RequestIdKey": "OcRequestId"
-  },
+
   "Orleans": {
     "Clients": {
       "uc": {

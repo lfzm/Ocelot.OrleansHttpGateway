@@ -24,7 +24,6 @@ namespace Ocelot.OrleansHttpGateway.Requester
             if (parameters == null || parameters.Length <= 0)
                 return Array.Empty<object>();
 
-
             var result = new object[parameters.Length];
             for (int i = 0; i < parameters.Length; i++)
             {
@@ -55,21 +54,22 @@ namespace Ocelot.OrleansHttpGateway.Requester
 
         public object BindPrimitiveType(ParameterInfo parameter, IQueryCollection queryData, JObject bodyData)
         {
+            
             if (queryData.TryGetValue(parameter.Name, out StringValues value))
             {
                 return Convert(value, parameter.ParameterType);
             }
-            else if (bodyData.TryGetValue(parameter.Name, StringComparison.OrdinalIgnoreCase, out JToken qvalue))
-            {
-                return qvalue.ToObject(parameter.ParameterType, _serializer);
-            }
             else
-                return null;
+            {
+                return this.BindClassType(parameter, bodyData);
+            }
         }
 
 
         public object BindClassType(ParameterInfo parameter, JObject bodyData)
         {
+            if (bodyData == null)
+                return null;
             if (bodyData.HasValues && bodyData.TryGetValue(parameter.Name, StringComparison.OrdinalIgnoreCase, out JToken qvalue))
             {
                 return qvalue.ToObject(parameter.ParameterType, _serializer);

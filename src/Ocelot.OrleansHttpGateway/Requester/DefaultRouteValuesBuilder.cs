@@ -1,6 +1,10 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http.Internal;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
+using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Ocelot.DownstreamRouteFinder.Finder;
@@ -30,13 +34,16 @@ namespace Ocelot.OrleansHttpGateway.Requester
         private readonly OrleansHttpGatewayOptions _options;
         private readonly OrleansRequesterConfiguration _config;
         private readonly IOcelotLogger _logger;
+        private readonly FormOptions _formOptions;
 
         public DefaultRouteValuesBuilder(IOptions<OrleansHttpGatewayOptions> options
             , IOptions<OrleansRequesterConfiguration> config
+            , IOptions<FormOptions> formOptions
            , IOcelotLoggerFactory factory)
         {
             this._config = config?.Value;
             this._options = options.Value;
+            _formOptions = formOptions.Value;
             this._logger = factory.CreateLogger<DefaultRouteValuesBuilder>();
         }
         public Response<GrainRouteValues> Build(DownstreamContext context)
@@ -143,7 +150,28 @@ namespace Ocelot.OrleansHttpGateway.Requester
             try
             {
                 routeValues.Querys = this.GetQueryParameter(context.DownstreamRequest.Query);
-                routeValues.Body = this.GetBodyParameter(context.DownstreamRequest, context.HttpContext.Request);
+
+
+                var body = this.ReadBodyStream(context.DownstreamRequest);
+                if (body != null && body.Length > 0)
+                {
+                    var requestContentType = context.HttpContext.Request.GetTypedHeaders().ContentType;
+                    if (requestContentType == null)
+                        routeValues.Body = null;
+                    else
+                    {
+                        this._logger.LogInformation($"Http request ContentType :{requestContentType.MediaType.ToString()}");
+                        if (requestContentType.MediaType.Equals("application/json", StringComparison.OrdinalIgnoreCase))
+                        {
+                            routeValues.Body = this.GetJsonParameter(body, context.HttpContext.Request);
+                        }
+                        else 
+                        {
+                            routeValues.Body = this.GetFormDataParameter(body, context.HttpContext.Request);
+                        }
+                    }
+                }
+
             }
             catch (Exception ex)
             {
@@ -152,6 +180,7 @@ namespace Ocelot.OrleansHttpGateway.Requester
             return routeValues;
         }
 
+
         private IQueryCollection GetQueryParameter(string queryString)
         {
             var querys = Microsoft.AspNetCore.WebUtilities.QueryHelpers
@@ -159,30 +188,49 @@ namespace Ocelot.OrleansHttpGateway.Requester
             return new QueryCollection(querys);
         }
 
-        private JObject GetBodyParameter(DownstreamRequest request, HttpRequest httpRequest)
+
+        private JObject GetFormDataParameter(Stream stream, HttpRequest request)
         {
-            var requestContentType = httpRequest.GetTypedHeaders().ContentType;
-            if (requestContentType?.MediaType != "application/json")
-                return new JObject();
+            request.Body = stream;
+            FormFeature formFeature = new FormFeature(request, _formOptions);
+            IFormCollection forms = formFeature.ReadForm();
+            if (forms == null || forms.Count == 0)
+                return null;
 
-            request.Scheme = "http";
-            var requestMessage = request.ToHttpRequestMessage();
-            request.Scheme = "orleans";
-            if (requestMessage.Content == null)
-                return new JObject();
+            JObject json = new JObject();
+            foreach (var f in forms)
+            {
+                json.Add(f.Key, f.Value.ToString());
+            }
+            return json;
+        }
 
+        private JObject GetJsonParameter(Stream stream, HttpRequest httpRequest)
+        {
             // parse encoding
             // default to UTF8
             var encoding = httpRequest.GetTypedHeaders().ContentType.Encoding ?? Encoding.UTF8;
-            var stream = requestMessage.Content.ReadAsStreamAsync().Result;
-            if(stream.Length==0)
-                return new JObject();
-
             using (var reader = new JsonTextReader(new StreamReader(stream, encoding)))
             {
                 reader.CloseInput = false;
                 return JObject.Load(reader);
             }
+        }
+
+
+        private Stream ReadBodyStream(DownstreamRequest request)
+        {
+            request.Scheme = "http";
+            var requestMessage = request.ToHttpRequestMessage();
+            request.Scheme = "orleans";
+            if (requestMessage.Content == null)
+                return null;
+
+            var stream = requestMessage.Content.ReadAsStreamAsync().Result;
+            if (stream.Length == 0)
+                return null;
+            else
+                return stream;
         }
 
         private ErrorResponse<GrainRouteValues> SetUnknownError(string message)

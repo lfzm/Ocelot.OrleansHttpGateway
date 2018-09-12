@@ -36,10 +36,16 @@ namespace Ocelot.OrleansHttpGateway.Requester
                         value = this.BindClassType(param, routeValues.Body);
                     }
                     else
+                    {
                         value = this.BindPrimitiveType(param, routeValues.Querys, routeValues.Body);
-
-                    if (value == null)
-                        return new object[0];
+                        if (value == null)
+                        {
+                            if (param.HasDefaultValue)
+                                value = param.DefaultValue;
+                            else
+                                return new object[0];
+                        }
+                    }
 
                     result[i] = value;
                 }

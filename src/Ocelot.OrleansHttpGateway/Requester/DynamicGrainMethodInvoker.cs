@@ -65,7 +65,11 @@ namespace Ocelot.OrleansHttpGateway.Requester
             ExceptionDispatchInfo lastException = null;
             try
             {
-                return _parameterBinder.BindParameters(executor.MethodParameters, route);
+                var param = _parameterBinder.BindParameters(executor.MethodParameters, route);
+                if (param.Length == executor.MethodParameters.Length)
+                    return param;
+                else
+                    throw new UnableToFindDownstreamRouteException("The request parameter is inconsistent with the parameter that executes the action.");
             }
             catch (Exception ex)
             {

@@ -14,7 +14,7 @@ namespace OrleansInterface
         [Authorize(Roles = "User")]
         Task<string> GetUser(string name);
 
-        Task<string> GetUser(string name,string sex);
+        Task<string> GetUser2(string name , string sex = "女");
 
         Task<string> AddUser(User user);
 

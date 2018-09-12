@@ -24,7 +24,7 @@ namespace OrleansInterface
             return Task.FromResult("Hello World "+ name  +"   id="+ this.GetPrimaryKeyLong());
         }
 
-        public Task<string> GetUser(string name, string sex)
+        public Task<string> GetUser2(string name, string sex="女")
         {
             return Task.FromResult($"Hello World {name} Sex：{sex}");
         }

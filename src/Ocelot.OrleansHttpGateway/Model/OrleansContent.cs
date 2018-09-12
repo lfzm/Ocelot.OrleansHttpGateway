@@ -14,6 +14,7 @@ namespace Ocelot.OrleansHttpGateway.Model
         private JsonSerializer _jsonSerializer;
         public OrleansContent(object result, JsonSerializer jsonSerializer)
         {
+            this.Headers.ContentLength = null;
             this._result = result;
             this._jsonSerializer = jsonSerializer;
         }

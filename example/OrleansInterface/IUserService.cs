@@ -18,6 +18,6 @@ namespace OrleansInterface
 
         Task<string> AddUser(User user);
 
-        Task<string> AddUser(int id, User user);
+        Task<User> AddUser2(string name, string sex = "女");
     }
 }

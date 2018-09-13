@@ -90,6 +90,7 @@ namespace Ocelot.OrleansHttpGateway
             }
 
             //Grain Dynamic request
+
             var resultResponse = await _grainInvoker.Invoke(grainResponse.Data, routeResponse.Data);
             if (resultResponse.IsError)
             {
@@ -98,8 +99,9 @@ namespace Ocelot.OrleansHttpGateway
                 return;
             }
             Logger.LogDebug("setting http response message");
-            context.HttpContext.Response.ContentType = "application/json";
+            context.HttpContext.Response.ContentType = resultResponse.Data.Content.ContentType;
             context.DownstreamResponse = new DownstreamResponse(resultResponse.Data.Content, resultResponse.Data.StatusCode, resultResponse.Data.Headers);
+
         }
 
 

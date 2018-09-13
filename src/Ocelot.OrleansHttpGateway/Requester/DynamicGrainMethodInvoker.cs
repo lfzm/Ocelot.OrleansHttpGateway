@@ -44,12 +44,20 @@ namespace Ocelot.OrleansHttpGateway.Requester
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message, ex);
+                _logger.LogError($"Binding parameter failed", ex);
                 return new ErrorResponse<OrleansResponseMessage>(new UnknownError(ex.Message));
             }
-            var result = await this.ExecuteAsync(executor, grain, parameters);
-            var message = new OrleansResponseMessage(new OrleansContent(result, this._jsonSerializer), HttpStatusCode.OK);
-            return new OkResponse<OrleansResponseMessage>(message);
+            try
+            {
+                var result = await this.ExecuteAsync(executor, grain, parameters);
+                var message = new OrleansResponseMessage(new OrleansContent(result, this._jsonSerializer), HttpStatusCode.OK);
+                return new OkResponse<OrleansResponseMessage>(message);
+            }
+            catch (System.Exception ex)
+            {
+                _logger.LogError($"Request {route.SiloName} Orleans failed", ex);
+                throw ex;
+            }
         }
 
         private object[] GetParameters(ObjectMethodExecutor executor, GrainRouteValues route)

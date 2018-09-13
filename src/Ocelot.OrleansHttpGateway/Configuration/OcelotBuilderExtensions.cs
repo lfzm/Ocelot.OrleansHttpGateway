@@ -2,16 +2,19 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Newtonsoft.Json;
+using Ocelot.Configuration.Repository;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
 using Ocelot.OrleansHttpGateway.Configuration;
 using Ocelot.OrleansHttpGateway.Infrastructure;
 using Ocelot.OrleansHttpGateway.Requester;
+using Ocelot.ServiceDiscovery;
 using Orleans;
 using Orleans.Configuration;
 using Orleans.Runtime;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Ocelot.DependencyInjection
 {
@@ -60,6 +63,10 @@ namespace Ocelot.DependencyInjection
             services.TryAddSingleton<IGrainReference, DefaultGrainReference>();
             services.TryAddSingleton<IRouteValuesBuilder, DefaultRouteValuesBuilder>();
             services.TryAddSingleton<IParameterBinder, DefaultParameterBinder>();
+
+            //Orleans need to use ServiceName configuration, configure ServiceName must have a service discovery provider, component forgery one
+            if (services.Where(s => s.ServiceType.Name == typeof(ServiceDiscoveryFinderDelegate).Name).Count() == 0)
+                services.TryAddSingleton<ServiceDiscoveryFinderDelegate>((provider, config, name) => throw new Exception($"Unable to find service discovery provider for type: {config.Type}"));
             return services;
         }
     }

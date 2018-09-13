@@ -67,7 +67,8 @@ namespace OcelotOrleans.AspNetCore
                                     opt.Address = new Uri($"http://{con.Host}:{con.Port}");
                                 });
                             }
-                            throw new OrleansConfigurationException($"Does not support {con.Type} service discovery");
+                            else
+                                throw new OrleansConfigurationException($"Does not support {con.Type} service discovery");
                         };
                     });
            })

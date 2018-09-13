@@ -97,6 +97,8 @@ namespace Ocelot.OrleansHttpGateway.Requester
                 if (this._requesterConfig == null)
                     throw new OrleansConfigurationException($"Configuring service discovery in OrleansRequesterConfiguration.ServiceDiscoveryConfig : {config.Type}");
                 //Call the configured service discovery 
+                if (this._requesterConfig.ServiceDiscoveryConfig==null)
+                    throw new OrleansConfigurationException($"Unable to use OrleansRequesterConfiguration.ServiceDiscoveryConfig to discover service using Orleans");
                 this._requesterConfig.ServiceDiscoveryConfig(config, build);
                 return build;
             }

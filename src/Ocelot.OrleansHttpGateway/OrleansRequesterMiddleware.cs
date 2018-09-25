@@ -100,7 +100,7 @@ namespace Ocelot.OrleansHttpGateway
             }
             Logger.LogDebug("setting http response message");
             context.HttpContext.Response.ContentType = resultResponse.Data.Content.ContentType;
-            context.DownstreamResponse = new DownstreamResponse(resultResponse.Data.Content, resultResponse.Data.StatusCode, resultResponse.Data.Headers);
+            context.DownstreamResponse = new DownstreamResponse(resultResponse.Data.Content, resultResponse.Data.StatusCode, resultResponse.Data.Headers,"");
 
         }
 

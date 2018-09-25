@@ -7,7 +7,6 @@ using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
 using Ocelot.OrleansHttpGateway.Configuration;
 using Ocelot.OrleansHttpGateway.Requester;
-using Ocelot.Provider.Consul;
 using Orleans.Hosting;
 using System;
 using System.IO;

@@ -2,9 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>1.2.0</Version>
+    <Version>1.2.1</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Authors>aqa510415008</Authors>
+    <Authors>阿凌</Authors>
     <Company>aling</Company>
     <Product>Ocelot.OrleansHttpGateway</Product>
     <Description>Ocelot extends Orleans components, Api Gateway</Description>
@@ -23,7 +23,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Orleans.Core" Version="2.0.3" />
-    <PackageReference Include="Ocelot" Version="12.0.0" />
+    <PackageReference Include="Ocelot" Version="12.0.1" />
   </ItemGroup>
 
 </Project>

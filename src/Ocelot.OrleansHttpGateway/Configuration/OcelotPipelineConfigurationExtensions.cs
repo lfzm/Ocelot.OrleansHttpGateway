@@ -59,7 +59,7 @@ public static class OcelotPipelineConfigurationExtensions
         }
 
         // The next thing we do is look at any claims transforms in case this is important for authorisation
-        builder.UseClaimsBuilderMiddleware();
+        builder.UseClaimsToClaimsMiddleware();
 
         // Allow pre authorisation logic. The idea being people might want to run something custom before what is built in.
         builder.UseIfNotNull(pipelineConfiguration.PreAuthorisationMiddleware);
@@ -78,13 +78,13 @@ public static class OcelotPipelineConfigurationExtensions
         }
 
         // Now we can run any header transformation logic
-        builder.UseHttpRequestHeadersBuilderMiddleware();
+        builder.UseClaimsToHeadersMiddleware();
 
         // Allow the user to implement their own query string manipulation logic
         builder.UseIfNotNull(pipelineConfiguration.PreQueryStringBuilderMiddleware);
 
         // Now we can run any query string transformation logic
-        builder.UseQueryStringBuilderMiddleware();
+        builder.UseClaimsToQueryStringMiddleware();
 
         // This takes the downstream route we retrieved earlier and replaces any placeholders with the variables that should be used
         builder.UseDownstreamUrlCreatorMiddleware();

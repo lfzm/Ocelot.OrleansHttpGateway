@@ -56,7 +56,7 @@ namespace Ocelot.OrleansHttpGateway.Requester
                 _logger.LogError($"Request {grain.GrainType.Name} Orleans failed,", ex);
                 if (ex.InnerException != null && ex.InnerException is Orleans.Runtime.OrleansMessageRejectionException)
                 {
-                    await Task.Delay(1000);
+                    await Task.Delay(1);
                     return await this.Invoke(executor, grain, parameters);
                 }
                 throw ex;

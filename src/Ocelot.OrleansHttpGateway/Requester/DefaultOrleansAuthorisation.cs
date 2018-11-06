@@ -2,6 +2,7 @@
 using Ocelot.Authorisation;
 using Ocelot.OrleansHttpGateway.Model;
 using Ocelot.Responses;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -38,7 +39,7 @@ namespace Ocelot.OrleansHttpGateway.Requester
 
         private Response<bool> AuthoriseRole(ClaimsPrincipal claimsPrincipal, string role)
         {
-            var roles = role.Split(string.Empty.ToCharArray()).Where(f => !string.IsNullOrEmpty(f)).ToList();
+            var roles = role.Split(new char[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var r in roles)
             {
                 if(claimsPrincipal.IsInRole(r))
@@ -52,7 +53,7 @@ namespace Ocelot.OrleansHttpGateway.Requester
 
         private Response<bool> AuthorisePolicy(ClaimsPrincipal claimsPrincipal, string policy)
         {
-            var policys = policy.Split(string.Empty.ToCharArray()).Where(f => !string.IsNullOrEmpty(f)).ToList();
+            var policys = policy.Split(new char[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var p in policys)
             {
                 IEnumerable<Claim> claims = claimsPrincipal.FindAll(p);

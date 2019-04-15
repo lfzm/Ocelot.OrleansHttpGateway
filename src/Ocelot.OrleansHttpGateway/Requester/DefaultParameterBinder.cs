@@ -31,6 +31,12 @@ namespace Ocelot.OrleansHttpGateway.Requester
                 {
                     var param = parameters[i];
                     object value = null;
+                    
+                    if (param.IsOptional && !routeValues.Querys.Keys.Contains(param.Name))
+                    {
+                        continue;
+                    }
+
                     if (param.ParameterType.CanHaveChildren())
                     {
                         value = this.BindClassType(param, routeValues.Body);
@@ -46,6 +52,7 @@ namespace Ocelot.OrleansHttpGateway.Requester
                                 return new object[0];
                         }
                     }
+                    
 
                     result[i] = value;
                 }
@@ -67,6 +74,7 @@ namespace Ocelot.OrleansHttpGateway.Requester
             }
             else
             {
+                if (parameter.ParameterType.Equals(typeof(string))) return null;
                 return this.BindClassType(parameter, bodyData);
             }
         }

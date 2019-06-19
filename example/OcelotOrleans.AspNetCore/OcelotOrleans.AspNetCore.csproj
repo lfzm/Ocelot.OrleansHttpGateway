@@ -16,6 +16,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Ocelot.OrleansHttpGateway\Ocelot.OrleansHttpGateway.csproj" />
+    <ProjectReference Include="..\OrleansInterface\OrleansInterface.csproj" />
   </ItemGroup>
+
+  <ProjectExtensions><VisualStudio><UserProperties ocelot_1json__JsonSchema="http://json.schemastore.org/azure-iot-edge-deployment-2.0" /></VisualStudio></ProjectExtensions>
 
 </Project>

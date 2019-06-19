@@ -46,7 +46,10 @@ namespace OcelotOrleans.AspNetCore
                    });
 
                s.AddOcelot()
-                    .AddOrleansHttpGateway((OrleansRequesterConfiguration config) =>
+                    .AddOrleansHttpGateway(clientOpt=>
+                    {
+                        clientOpt.AddClient("uc", "dev", "dev", typeof(OrleansInterface.IUserService).Assembly);
+                    },(OrleansRequesterConfiguration config) =>
                     {
                         config.MapRouteToGraininterface = (route) =>
                         {
@@ -60,15 +63,15 @@ namespace OcelotOrleans.AspNetCore
                         };
                         config.ServiceDiscoveryConfig = (con, build) =>
                         {
-                            if (con.Type.Equals("consul", StringComparison.OrdinalIgnoreCase))
-                            {
-                                build.UseConsulClustering(opt =>
-                                {
-                                    opt.Address = new Uri($"http://{con.Host}:{con.Port}");
-                                });
-                            }
-                            else
-                                throw new OrleansConfigurationException($"Does not support {con.Type} service discovery");
+                            //if (con.Type.Equals("consul", StringComparison.OrdinalIgnoreCase))
+                            //{
+                            //    build.UseConsulClustering(opt =>
+                            //    {
+                            //        opt.Address = new Uri($"http://{con.Host}:{con.Port}");
+                            //    });
+                            //}
+                            //else
+                            //    throw new OrleansConfigurationException($"Does not support {con.Type} service discovery");
                         };
                     });
            })

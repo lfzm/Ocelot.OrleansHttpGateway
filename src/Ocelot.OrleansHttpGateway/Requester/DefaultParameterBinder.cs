@@ -32,7 +32,7 @@ namespace Ocelot.OrleansHttpGateway.Requester
                     var param = parameters[i];
                     object value = null;
                     
-                    if (param.IsOptional && !routeValues.Querys.Keys.Contains(param.Name))
+                    if (param.IsOptional)
                     {
                         continue;
                     }
@@ -67,14 +67,12 @@ namespace Ocelot.OrleansHttpGateway.Requester
 
         public object BindPrimitiveType(ParameterInfo parameter, IQueryCollection queryData, JObject bodyData)
         {
-            
             if (queryData.TryGetValue(parameter.Name, out StringValues value))
             {
                 return Convert(value, parameter.ParameterType);
             }
             else
             {
-                if (parameter.ParameterType.Equals(typeof(string))) return null;
                 return this.BindClassType(parameter, bodyData);
             }
         }

@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>1.3.2-rc1</Version>
+    <Version>1.3.2-rc2</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>阿凌</Authors>
     <Company>aling</Company>

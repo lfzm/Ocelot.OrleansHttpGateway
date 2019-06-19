@@ -32,11 +32,6 @@ namespace Ocelot.OrleansHttpGateway.Requester
                     var param = parameters[i];
                     object value = null;
                     
-                    if (param.IsOptional)
-                    {
-                        continue;
-                    }
-
                     if (param.ParameterType.CanHaveChildren())
                     {
                         value = this.BindClassType(param, routeValues.Body);
@@ -52,7 +47,6 @@ namespace Ocelot.OrleansHttpGateway.Requester
                                 return new object[0];
                         }
                     }
-                    
 
                     result[i] = value;
                 }
